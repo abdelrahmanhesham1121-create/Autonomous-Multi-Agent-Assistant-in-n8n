@@ -1,0 +1,782 @@
+{
+  "name": "Multi agent system",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -528,
+        -352
+      ],
+      "id": "bc755538-8b77-4c18-933c-1a8fa974fb38",
+      "name": "When chat message received",
+      "webhookId": "e17a92bb-53ed-41c7-8a66-38c421c00f65"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are the central Manager Agent responsible for orchestrating user requests. \nYour primary job is to understand the user's intent and delegate tasks to the specialized sub-agents available to you:\n\n1. calender reservation: Handles Google Calendar operations (checking availability, booking, updating, searching, and deleting events).\n2. Contacts: Handles contact management (getting, creating, and updating contact details).\n3. Email agent: Handles email tasks via Gmail (sending, reading unread messages, replying, and deleting emails).\n\nGuidelines:\n- Analyze the user query carefully.\n- Delegate to one or more sub-agents as necessary to complete the user's request.\n- Synthesize responses from the sub-agents into a concise, professional, and clear answer to the user.\n- If missing required info (e.g., event time or email recipient), prompt the user directly before taking action."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -144,
+        -464
+      ],
+      "id": "bef8735d-bad5-433a-8cbf-cf63ecc75a57",
+      "name": "Manager"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.7-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -304,
+        -224
+      ],
+      "id": "6c7512cc-668d-4324-a1df-b06344ba9cc4",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Ld2fsXDUea20R2ur",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -208,
+        -224
+      ],
+      "id": "37c767fe-8be8-4531-8cfc-ed8fd2c1a3bd",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        432,
+        192
+      ],
+      "id": "c227d84e-76b4-477d-ab3a-f9a4794c989f",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Ld2fsXDUea20R2ur",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are a specialized Email Agent. Your sole responsibility is handling incoming and outgoing emails using your connected Gmail tools.\n\nYour capabilities:\n- Fetch unread messages (`UnRead`)\n- Draft & send emails (`Send`)\n- Reply to existing threads (`Reply to a message in Gmail`)\n- Delete emails (`Delete a message in Gmail`)\n\nGuidelines:\n- Always double-check email recipients (`to`), subjects, and body text before triggering email delivery.\n- Maintain a polite, concise, and professional tone in all generated email drafts and replies.\n- Summarize fetched emails briefly when requested by the orchestrator."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        432,
+        -112
+      ],
+      "id": "1a957dbe-4117-4e2b-a3b1-bb087219bc0f",
+      "name": "Email agent"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        528,
+        48
+      ],
+      "id": "2689f27d-f384-4e24-bd96-8088ef8f5cda",
+      "name": "Simple Memory1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "readStatus": "unread"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        256
+      ],
+      "id": "4a9e58c9-2267-4aaf-85b2-4a6780846b77",
+      "name": "UnRead",
+      "webhookId": "b4a783ed-cb99-4312-8b7b-186adcd9c01a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "cs7QiWh1zRDfCHxA",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        576,
+        256
+      ],
+      "id": "c5c96f67-7604-4920-bd16-42187da11e1a",
+      "name": "Send",
+      "webhookId": "b2280ff7-d3e2-4a79-9d9a-812996ecfa95",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "cs7QiWh1zRDfCHxA",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        240
+      ],
+      "id": "acae1dac-9311-44a7-9212-173d0729f2da",
+      "name": "Delete a message in Gmail",
+      "webhookId": "9be7e7aa-58ce-4eee-99dd-e1babe2e0eb2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "cs7QiWh1zRDfCHxA",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        224
+      ],
+      "id": "5eb2db03-f254-46d7-a7a2-9475b8d4c147",
+      "name": "Reply to a message in Gmail",
+      "webhookId": "9051481d-861d-49b7-ba86-fc0ad1d0b815",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "cs7QiWh1zRDfCHxA",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are a specialized Contacts Agent. Your sole responsibility is managing contact records using your connected contact tools.\n\nYour capabilities:\n- Retrieve contact details (`Get`)\n- Add new contacts (`Create`)\n- Modify contact details (`Update`)\n\nGuidelines:\n- When searching or updating, ensure you match contacts accurately by full name or email address.\n- When creating a new contact, collect at least a name and email or phone number.\n- Respond with clear details of the contact action executed."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        -32,
+        32
+      ],
+      "id": "c72f2111-3eca-4c4f-9f00-00aebe2c39e3",
+      "name": "Contacts"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        352
+      ],
+      "id": "d0bdb286-f481-4a93-8c15-8af8306b9cfb",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Ld2fsXDUea20R2ur",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        192
+      ],
+      "id": "8306c8b5-cba2-4598-aabf-b65e04962455",
+      "name": "Simple Memory2"
+    },
+    {
+      "parameters": {
+        "familyName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Family_Name', ``, 'string') }}",
+        "givenName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Given_Name', ``, 'string') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleContactsTool",
+      "typeVersion": 1,
+      "position": [
+        160,
+        352
+      ],
+      "id": "4f28a326-b514-4190-9c61-08b6da677557",
+      "name": "Create",
+      "credentials": {
+        "googleContactsOAuth2Api": {
+          "id": "NkPTx8k7jPmx2DgZ",
+          "name": "Google Contacts account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "contactId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Contact_ID', ``, 'string') }}",
+        "fields": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Fields', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.googleContactsTool",
+      "typeVersion": 1,
+      "position": [
+        48,
+        352
+      ],
+      "id": "bd787c74-fe3e-40be-a48e-11f7290edbe1",
+      "name": "Get",
+      "credentials": {
+        "googleContactsOAuth2Api": {
+          "id": "NkPTx8k7jPmx2DgZ",
+          "name": "Google Contacts account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "contactId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Contact_ID', ``, 'string') }}",
+        "fields": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Fields', ``, 'string') }}",
+        "updateFields": {}
+      },
+      "type": "n8n-nodes-base.googleContactsTool",
+      "typeVersion": 1,
+      "position": [
+        272,
+        352
+      ],
+      "id": "df36ba8e-fed7-49b9-b973-c7c6e922e399",
+      "name": "Update",
+      "credentials": {
+        "googleContactsOAuth2Api": {
+          "id": "NkPTx8k7jPmx2DgZ",
+          "name": "Google Contacts account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are a specialized Calendar Reservation Agent. Your sole responsibility is managing user calendar schedules using your connected Google Calendar tools.\n\nYour capabilities:\n- Search events (`search`)\n- Check calendar free/busy slots (`Get availability`)\n- Create new calendar events (`Create1`)\n- Update existing events (`Update1`)\n- Remove events (`Delete`)\n\nGuidelines:\n- Always check schedule availability before creating a new meeting or event.\n- Confirm exact dates, start times, end times, and titles before calling mutation tools (Create, Update, Delete).\n- Return a clear, human-readable confirmation summarizing any calendar changes made."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        -608,
+        -32
+      ],
+      "id": "e52093d5-fc3e-4188-9fdc-8cb2747e8038",
+      "name": "calender reservation"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -768,
+        160
+      ],
+      "id": "d1a73039-3d0a-4fdd-b670-a6e67d6b5279",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Ld2fsXDUea20R2ur",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -640,
+        160
+      ],
+      "id": "d1451b35-241d-42a5-aecc-4c57a046a376",
+      "name": "Simple Memory3"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Calendar', ``, 'string') }}",
+          "mode": "id",
+          "__regex": "(^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*)"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "updateFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -480,
+        208
+      ],
+      "id": "95e5b105-d5be-420b-826b-f3768b1e4ccb",
+      "name": "Update1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "SZczpccQE6iIVdie",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Calendar', ``, 'string') }}",
+          "mode": "id",
+          "__regex": "(^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*)"
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -544,
+        368
+      ],
+      "id": "9469e2b9-0e85-4503-90e1-f15b68a54d97",
+      "name": "Create1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "SZczpccQE6iIVdie",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Calendar', ``, 'string') }}",
+          "mode": "id",
+          "__regex": "(^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -384,
+        208
+      ],
+      "id": "d2ecb113-34c0-4f6f-81ff-cfba3bbce2c4",
+      "name": "search",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "SZczpccQE6iIVdie",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Calendar', ``, 'string') }}",
+          "mode": "id",
+          "__regex": "(^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*)"
+        },
+        "options": {
+          "timezone": {
+            "mode": "list",
+            "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Timezone', ``, 'string') }}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -304,
+        368
+      ],
+      "id": "3439799f-cf46-4469-b872-5c470ca2466d",
+      "name": "Get availability",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "SZczpccQE6iIVdie",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Calendar', ``, 'string') }}",
+          "mode": "id",
+          "__regex": "(^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*)"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -432,
+        384
+      ],
+      "id": "c4fbbf0f-00e9-403d-b652-291893ed444d",
+      "name": "Delete",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "SZczpccQE6iIVdie",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Manager",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Manager",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Email agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UnRead": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contacts": {
+      "ai_tool": [
+        [
+          {
+            "node": "Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Contacts",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory2": {
+      "ai_memory": [
+        [
+          {
+            "node": "Contacts",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create": {
+      "ai_tool": [
+        [
+          {
+            "node": "Contacts",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get": {
+      "ai_tool": [
+        [
+          {
+            "node": "Contacts",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update": {
+      "ai_tool": [
+        [
+          {
+            "node": "Contacts",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calender reservation": {
+      "ai_tool": [
+        [
+          {
+            "node": "Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "calender reservation",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory3": {
+      "ai_memory": [
+        [
+          {
+            "node": "calender reservation",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update1": {
+      "ai_tool": [
+        [
+          {
+            "node": "calender reservation",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create1": {
+      "ai_tool": [
+        [
+          {
+            "node": "calender reservation",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search": {
+      "ai_tool": [
+        [
+          {
+            "node": "calender reservation",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get availability": {
+      "ai_tool": [
+        [
+          {
+            "node": "calender reservation",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete": {
+      "ai_tool": [
+        [
+          {
+            "node": "calender reservation",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "d90f7602-9dfe-4cf6-bc11-087683d6063f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6d747aaf027c3ad07a5845209c4d24b25add38631f308167f892fb5934916117"
+  },
+  "nodeGroups": [],
+  "id": "N9dDEv6FAdCT2c4O",
+  "tags": []
+}
